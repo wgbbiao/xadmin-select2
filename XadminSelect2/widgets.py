@@ -47,7 +47,6 @@ class SelectizeMultipleWidget(forms.SelectMultiple):
 
 class SelectizeMultiplePlugin(BaseAdminPlugin):
     def get_field_style(self, attrs, db_field, style, **kwargs):
-        print style
         if style == 'select2':
             db = kwargs.get('using')
             return {'widget': SelectizeMultipleWidget(db_field.remote_field, self.admin_view, using=db)}
