@@ -1,24 +1,33 @@
 #-*-coding:utf8;-*-
 from xadmin.views import BaseAdminPlugin
 from django import forms
+import django
 from django.utils.html import format_html
 from xadmin.util import vendor
 from django.utils.encoding import (
     force_text
 )
+if django.VERSION < (1, 11):
+    DJANGO_11 = False
+else:
+    DJANGO_11 = True
+
+
 class SelectizeMultipleWidget(forms.SelectMultiple):
+
     def __init__(self, rel, admin_view, attrs=None, using=None):
         self.rel = rel
         self.admin_view = admin_view
         self.db = using
         super(SelectizeMultipleWidget, self).__init__(attrs)
+
     @property
     def media(self):
         media = vendor('select.js', 'select.css')
         media.add_js(['js/selectize-multiple.js'])
         return media
-    
-    def build_attrs(self, attrs={}, **kwargs):
+
+    def build_attrs(self, attrs={}, extra_attrs=None, **kwargs):
         to_opts = self.rel.to._meta
         attrs['data-search-url'] = self.admin_view.get_admin_url(
             '%s_%s_changelist' % (to_opts.app_label, to_opts.model_name))
@@ -27,7 +36,10 @@ class SelectizeMultipleWidget(forms.SelectMultiple):
         else:
             attrs['class'] = attrs['class'] + ' selectize-multiple'
         attrs['data-choices'] = '?'
-        return super(SelectizeMultipleWidget,self).build_attrs(attrs,**kwargs)
+        if DJANGO_11:
+            return super(SelectizeMultipleWidget, self).build_attrs(attrs, extra_attrs=kwargs)
+        else:
+            return super(SelectizeMultipleWidget, self).build_attrs(attrs, **kwargs)
 
     def render_options(self, selected_choices):
         # Normalize to strings.
@@ -46,6 +58,7 @@ class SelectizeMultipleWidget(forms.SelectMultiple):
 
 
 class SelectizeMultiplePlugin(BaseAdminPlugin):
+
     def get_field_style(self, attrs, db_field, style, **kwargs):
         if style == 'select2':
             db = kwargs.get('using')
